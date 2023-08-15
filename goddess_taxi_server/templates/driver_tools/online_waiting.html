@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>等待派單</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+      crossorigin="anonymous"
+    />
+
+    <style>
+      html {
+        height: 100%;
+      }
+
+      .slidecontainer {
+        width: 100%;
+      }
+
+      .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 60px;
+        border-radius: 30px;
+        background: darkred;
+        outline: none;
+        opacity: 1;
+        -webkit-transition: 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 60px;
+        height: 45px;
+        border-radius: 25px;
+        background: white;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 60px;
+        height: 45px;
+        border-radius: 25px;
+        background: white;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+          <h1 class="font-weight-bolder mb-5">
+            <strong>等待派單中...</strong>
+          </h1>
+          <h3
+            id="server_group"
+            class="font-weight-bolder"
+            style="
+              background-color: #00b050;
+              color: white;
+              padding-top: 3px;
+              padding-bottom: 3px;
+            "
+          ></h3>
+        </div>
+      </div>
+      <br />
+      <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+          <div class="slidecontainer">
+            <input
+              type="hidden"
+              min="1"
+              max="100"
+              value="3"
+              class="slider"
+              id="myRange"
+              onchange="this.value=value"
+            />
+          </div>
+          <h4 class="mt-2">右滑放棄等待</h4>
+        </div>
+      </div>
+      <hr />
+      <div
+        class="row justify-content-center"
+        style="display: flex; flex-direction: column; :center ; color: red"
+      >
+        <h4 style="text-align: center">【注意事項】</h4>
+        <ul>
+          <li>請勿點選右上角「 X 」</li>
+          <li>若 15 分鐘內未收到派單: 將自動下線</li>
+        </ul>
+      </div>
+    </div>
+  </body>
+  <script
+    charset="utf-8"
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"
+    integrity="sha384-fbbOQedDUMZZ5KreZpsbe1LCZPVmfTnH7ois6mU1QK+m14rQ1l2bGBq41eYeM/fS"
+    crossorigin="anonymous"
+  ></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+
+  <script>
+    let currentlat, currentLng;
+
+    let lineId = "";
+    let liff_id = "2000375045-m4D2Wp53";
+    $(document).ready(function () {
+      //上線接單
+      let wait = setInterval(updateLocation, 5000); //等待訂單接收功能
+
+      $.ajaxSetup({
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+      });
+
+      function exit() {
+        $.ajax({
+          url: "{% url 'waiting' %}",
+          method: "POST",
+          data: {
+            uid: lineId,
+            status: "end",
+          }, // 將表單資料用打包起來送出去
+          beforeSend: function () {
+            $("#server_group").html(`正在下線中`);
+          },
+          success: function (res) {
+            if (res.status == true) {
+              liff.closeWindow();
+              clearInterval(wait);
+            }
+          },
+        });
+      }
+
+      $("#myRange").on("change", function (e) {
+        $("#myRange").val($(this).val());
+        if ($("#myRange").val() >= 70) {
+          e.preventDefault();
+
+          exit();
+        }
+      });
+
+      //初始化LIFF，取得資料
+      liff
+        .init({
+          liffId: liff_id,
+        })
+        .then(async () => {
+          if (liff.isLoggedIn()) {
+            liff.getFriendship().then((data) => {
+              if (!data.friendFlag) {
+                alert("您已被車隊客服封鎖或已移除，請聯繫客服確認");
+                liff.closeWindow();
+              }
+            });
+            let user = liff.getDecodedIDToken();
+            await liff
+              .getProfile()
+              .then(function (profile) {
+                lineId = profile.userId;
+                getLocationWay();
+              })
+              .catch(function (error) {});
+          } else {
+            liff.login();
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+
+      function no_request() {
+        $.ajax({
+          url: "{% url 'none_ride_request' %}",
+          method: "POST",
+          data: {
+            uid: lineId,
+          }, // 將表單資料用打包起來送出去
+          beforeSend: function () {
+            $("#server_group").html(`等待結束，即將下線`);
+          },
+          success: function (res) {
+            liff
+              .init({
+                liffId: liff_id,
+              })
+              .then(async () => {
+                clearInterval(wait);
+                liff.closeWindow();
+                window.close();
+              });
+          },
+        });
+      }
+
+      //取得GPS位置
+      function getLocationWay() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(init, () => {
+            const GPSopen = confirm("請開啟GPS後再確認");
+
+            if (GPSopen) {
+              window.location.reload();
+            } else {
+              liff.closeWindow();
+            }
+          });
+        } else {
+          confirm("請開啟GPS後再確認");
+        }
+      }
+
+      //初始化功能
+      function init() {
+        //判斷有無支援GPS功能
+        $.ajax({
+          url: "{% url 'waiting' %}",
+          method: "POST",
+          data: {
+            uid: lineId,
+            status: "init",
+          }, // 將表單資料用打包起來送出去
+          beforeSend: function () {
+            $("#server_group").html(`上線中... 請稍後`);
+          },
+          success: function (res) {
+            if (res.status != true) {
+              alert(res.log);
+              liff.closeWindow();
+            } else {
+              setTimeout(() => {
+                clearInterval(wait);
+                no_request();
+              }, 900000);
+            }
+          },
+          error: function () {
+            alert("初始化失敗，請重新確認");
+            liff.closeWindow();
+          },
+        });
+      }
+
+      function sentLocation(position) {
+        currentlat = position.coords.latitude.toString();
+        currentLng = position.coords.longitude.toString();
+        console.log(currentlat + "," + currentLng);
+
+        $.ajax({
+          url: "{% url 'updateLocation' %}",
+          method: "POST",
+          data: {
+            uid: lineId,
+            lati_NS: currentlat,
+            longi_EW: currentLng,
+          }, // 將表單資料用打包起來送出去
+
+          success: function (res) {
+            if (res.status == true) {
+              liff.closeWindow();
+            } else {
+              if (currentlat !== "") {
+                $("#server_group").html(
+                  `若15分鐘內無乘客叫車，將自動關閉頁面。`
+                );
+                $("#myRange").attr("type", "range");
+              }
+            }
+          },
+        });
+      }
+
+      //開始更新
+      function updateLocation() {
+        navigator.geolocation.getCurrentPosition(sentLocation, () => {
+          const GPSopen = confirm("請開啟GPS後再確認");
+          if (GPSopen) {
+            window.location.reload();
+          } else {
+            exit();
+          }
+        });
+      }
+    });
+  </script>
+</html>

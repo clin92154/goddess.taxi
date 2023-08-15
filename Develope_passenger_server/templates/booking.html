@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <title>準備出發</title>
+  </head>
+
+  <body>
+    <main>{% include 'passenger/map_book.html' %}</main>
+  </body>
+
+  <script
+    charset="utf-8"
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+  ></script>
+
+  <script>
+    let line_user_id = "";
+    let liff_ID = "2000375058-qWx7KRvA";
+    let server_name = window.location.pathname.split("/")[1];
+    let displayName = document.getElementById("displayName");
+    $(document).ready(function () {
+      $.ajaxSetup({
+        data: { csrfmiddlewaretoken: "{{ csrf_token }}" },
+      });
+      //接收乘客user_token
+
+      let lineId = document.getElementById("user_id");
+      liff
+        .init({
+          liffId: liff_ID,
+        })
+        .then(async () => {
+          if (liff.isLoggedIn()) {
+            liff.getFriendship().then((data) => {
+              if (!data.friendFlag) {
+                alert("您已被客服封鎖或尚未加入好友。");
+                liff.closeWindow();
+              }
+            });
+            let user = liff.getDecodedIDToken();
+            const idToken = liff.getDecodedIDToken();
+            liff
+              .getProfile()
+              .then(function (profile) {
+                lineId.value = profile.userId;
+                line_user_id = profile.userId;
+                displayName.value = profile.displayName;
+                judge(line_user_id); //開始判斷;
+              })
+              .catch(function (error) {
+                alert("出現錯誤，請重新再試:" + error);
+                liff.closeWindow();
+              });
+            //$("form").on("submit", comfirm());
+          } else {
+            liff.login();
+          }
+        })
+        .catch((err) => {
+          alert("出現錯誤，請重新再試:" + err);
+          liff.closeWindow();
+        });
+
+      function judge(uid) {
+        $.ajax({
+          type: "POST",
+          url: "{% url 'booking_init' %}",
+          data: {
+            user_id: uid,
+          },
+          dataType: "json",
+          success: function (res) {
+            if (res.is_pass == false) {
+              alert("目前偵測你有其他訂單正在進行中，請稍後再試");
+              liff.closeWindow();
+            } else {
+              try {
+                document.getElementById("ph").value = res.ph_n;
+              } catch {
+                console.log("無手機號碼");
+              }
+            }
+          },
+        });
+      } //開始判斷;
+    });
+  </script>
+</html>

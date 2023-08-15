@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>手機版 Google Map 導航</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU"
+      crossorigin="anonymous"
+    />
+    <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/2.9.3/umd/popper.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+    <style>
+      .container-fluid {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        vertical-align: middle;
+      }
+
+      .map {
+        height: 100%;
+        background-color: #f7f7f7;
+        border: 2px solid #333;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .alert-success {
+        flex-grow: 1;
+        width: 100%;
+      }
+
+      .card {
+        background-color: #f7f7f7;
+        border: 2px solid #333;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      #path-indicator {
+        text-align: center;
+        font-size: 1em;
+        /* margin: 20px auto; */
+      }
+
+      .modal-content {
+        background-color: #f7f7f7;
+        border: 2px solid #333;
+      }
+
+      .modal-title {
+        color: #333;
+        font-weight: bold;
+      }
+
+      .modal-body p {
+        color: #333;
+        font-weight: bold;
+      }
+
+      .modal-body span {
+        color: #007bff;
+        font-weight: bold;
+      }
+
+      .btn-feedback {
+        transition: transform 0.2s;
+      }
+
+      .btn-feedback:active {
+        transform: scale(0.95);
+      }
+
+      .pac-container {
+        z-index: 1070;
+      }
+    </style>
+  </head>
+
+  <body>
+    {% include 'navigator/go_departing.html' %}
+  </body>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.1/dist/umd/popper.min.js"
+    integrity="sha384-W8fXfP3gkOKtndU4JGtKDvXbO53Wy8SZCQHczT5FMiiqmQfUpWbYdTil/SxwZgAN"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.min.js"
+    integrity="sha384-skAcpIdS7UcVUC05LJ9Dxay8AXcDYfBJqt1CJ85S/CFujBsIzCIv+l9liuYLaMQ/"
+    crossorigin="anonymous"
+  ></script>
+  {% comment %}
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW"></script>
+  {% endcomment %}
+
+  <script
+    charset="utf-8"
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+  ></script>
+  {% load static %}
+
+  <script>
+    let arrivalLatLng, location_name;
+    let arrow = "{% static 'image/arrow_up.png' %}"; //
+  </script>
+
+  <script>
+    let lineId = "";
+    let liff_id = "2000375045-yZLYrm5d";
+    let endnavigateor = document.getElementById("end_navigateor");
+    let base_fare;
+    let final_time;
+    let final_fare;
+    let final_distance;
+
+    //window.clearInterval(timeoutID);
+    $(document).ready(function () {
+      $.ajaxSetup({
+        data: { csrfmiddlewaretoken: "{{ csrf_token }}" },
+      });
+
+      liff
+        .init({
+          liffId: liff_id,
+        })
+        .then(async () => {
+          if (liff.isLoggedIn()) {
+            let user = liff.getDecodedIDToken();
+            liff
+              .getProfile()
+              .then(function (profile) {
+                lineId = profile.userId;
+                init(lineId);
+              })
+              .catch(function (error) {});
+            //$("form").on("submit", comfirm());
+          } else {
+            liff.login();
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+
+      /*    1. 取得司機目前接到的最新訂單編號以及狀況
+          2. 如果是前往上車地->取得目前位置及上車地點 -->結束鍵 : go_departing
+          3. 如果是前往下車地->取得目前位置及上車地點 -->結束鍵 : go_arriving  */
+
+      function init(uid) {
+        $.ajax({
+          url: "{% url 'go_departing' %}",
+          method: "POST",
+          data: {
+            uid: uid,
+            status: "init",
+          }, // 將表單資料用打包起來送出去
+          success: function (res) {
+            if (res.status == "go_departing") {
+              endnavigateor.value = "go_departing";
+              arrivalLatLng = res.arriving_location; //終點座標
+              document.getElementById("departure").innerHTML =
+                res.location_name;
+              base_fare = res.base_fare;
+            }
+          },
+        });
+      }
+    });
+
+    function end_navigateor(status) {
+      $.ajax({
+        type: "POST",
+        url: "{% url 'go_departing' %}",
+        data: {
+          uid: lineId,
+          status: status,
+        },
+        dataType: "json",
+        success: function (res) {
+          if (res.status == "end_departing") {
+            liff.closeWindow();
+          }
+        },
+        error: function (xhr, status, error) {},
+      });
+    }
+  </script>
+  <script src="{% static 'js/navigator.js' %}"></script>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC_s5-fCc69D64n3iA4PznfVhF3Sn_5YVA&libraries=drawing,geometry,places&language=zh-TW&callback=initMap"></script>
+</html>

@@ -1,0 +1,152 @@
+<div class="container-fluid">
+  <div
+    id="toastContainer"
+    aria-live="polite"
+    aria-atomic="true"
+    style="position: fixed; top: 20px; right: 20px; z-index: 100"
+  ></div>
+  <div class="row mb-1">
+    <div class="btn-group" role="group" aria-label="btnGroup">
+      <button
+        class="btn btn-lg btn-primary btn-block btn-feedback col-6"
+        type="button"
+        onclick="startJourney()"
+      >
+        <i class="bi bi-car-front-fill"></i><b> 出發</b>
+      </button>
+      <!-- 0726更新,重新定位改為選擇目的地 -->
+      <button
+        class="btn btn-lg btn-warning btn-block btn-feedback col-4"
+        type="button"
+        onclick="getPosition()"
+      >
+        <i class="bi bi-geo-alt-fill"></i><b> 選擇目的地</b>
+      </button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="text-white bg-success mb-1 card">
+        <h5 class="card-header">路徑指示</h5>
+        <div class="card-body">
+          <h5 id="card-distance" class="card-title">路口距離</h5>
+          <p id="card-instruction" class="card-text">詳細方向指示</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="googleMap" class="map mb-1"></div>
+  <div class="text-white bg-info card mb-1">
+    <h5 class="card-header">計費資訊</h5>
+    <div class="card-body">
+      <h5 class="card-title">總收費</h5>
+      <p id="card-fare" class="card-text">怠速時間與行駛距離</p>
+    </div>
+  </div>
+  <!-- Modal for end-->
+  <div
+    class="modal fade"
+    id="endModal"
+    tabindex="-1"
+    aria-labelledby="exampleModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">
+            <i class="fa-solid fa-file-check fa-lg">行程結算</i>
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>行駛距離: <span id="total-distance"></span></p>
+          <p>車資金額: <span id="total-fare"></span></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-success"
+            id="end_navigateor"
+            data-bs-dismiss="modal"
+            value="end_arriving"
+            onclick="end_navigateor(this.value)"
+          >
+            <i class="bi bi-clipboard-check-fill"></i> 完成行程
+          </button>
+          <button type="button" class="btn btn-warning" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle-fill"></i> 關閉視窗
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal for start-->
+  <div
+    class="modal fade"
+    id="startModal"
+    tabindex="-1"
+    aria-labelledby="exampleModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">
+            <i class="fa-solid fa-file-check fa-lg">行程確認</i>
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label for="inputField" class="form-label">目的地 ： </label>
+              <input
+                type="text"
+                class="form-control"
+                id="arriavalInput"
+                placeholder="若空白請手動輸入地址"
+              />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-success"
+            data-bs-dismiss="modal"
+            onclick="calcRoute(departureLatLng,arrivalLatLng)"
+          >
+            <i class="bi bi-arrow-90deg-right"></i> 出發
+          </button>
+          <button type="button" class="btn btn-warning" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle-fill"></i> 關閉
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="d-grid">
+      <button
+        class="btn btn-lg btn-danger btn-block btn-feedback mb-1"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#endModal"
+        onclick="endJourney()"
+      >
+        <i class="bi bi-flag-fill"></i><b> 結束行程</b>
+      </button>
+    </div>
+  </div>
+</div>

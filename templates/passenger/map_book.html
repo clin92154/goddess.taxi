@@ -1,0 +1,112 @@
+<form method="POST" id="orderlist" class="order">
+  <h1>嗨，今天想去哪兒?</h1>
+  <input id="req_id" name="req_id" type="hidden" value="{{req_id}}" />
+  <input id="user_id" name="user_id" type="hidden" required />
+  <input id="displayName" name="displayName" type="hidden" />
+  <div class="pick-up">
+    <label for="pick-up"
+      >您的上車地點<span style="color: red; font-size: 0.25rem"
+        >*必填</span
+      ></label
+    >
+    <input
+      id="pick-up"
+      name="pick-up"
+      type="text"
+      placeholder="請輸入上車地址"
+      required
+    />
+  </div>
+  <div class="drop-off">
+    <label for="drop-off"
+      >您的下車地點<span style="color: red; font-size: 0.25rem"
+        >*選填</span
+      ></label
+    >
+    <input
+      id="drop-off"
+      name="drop-off"
+      type="text"
+      placeholder="請輸入下車地址"
+      value=""
+    />
+  </div>
+  <div class="ph">
+    <label
+      for="
+      phone"
+      >您的手機號碼<span style="color: red; font-size: 0.25rem"
+        >*選填</span
+      ></label
+    >
+    <input
+      id="ph"
+      name="phone"
+      type="text"
+      placeholder="輸入格式：09XXXXXXXX"
+      maxlength="10"
+    />
+  </div>
+  <div class="memo">
+    <h2>還有其他需求嗎?</h2>
+    <textarea
+      class="memo"
+      placeholder="例如:不要聊天.."
+      name="memo"
+      value=""
+    ></textarea>
+  </div>
+  <button type="submit" class="next">下一步</button>
+</form>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+{% load static %}
+<script src="{% static 'js/autocomplete.js' %}">
+  let PickupGPSlatLng , arrivinglat, arrivingLng, departinglat, departingLng;
+</script>
+<script>
+  $(document).ready(function () {
+    $.ajaxSetup({
+      data: { csrfmiddlewaretoken: "{{ csrf_token }}" },
+    });
+
+    //訂單寄出後，會post至後端，並載入remarks.html
+    $("#orderlist").submit(function (event) {
+      //alert(server_name);
+      event.preventDefault();
+      $.ajax({
+        type: "POST",
+        url: "{% url 'createRsv' %}",
+        data: {
+          req_id: $("#req_id").val(),
+          user_id: $("#user_id").val(),
+          name: $("#displayName").val(),
+          phone: $("#ph").val(),
+          departing: {
+            name: $("#pick-up").val(),
+            lati_NS: departinglat,
+            longi_EW: departingLng,
+          },
+          arriving: {
+            name: $("#drop-off").val(),
+            lati_NS: arrivinglat,
+            longi_EW: arrivingLng,
+          },
+          memo: $("textarea").val(),
+          use_server: server_name,
+        },
+        contentType: "application/json",
+        dataType: "html",
+        success: function (res) {
+          $("main").html(res);
+        },
+        error: function (xhr, status, error) {
+          alert("送出訂單失敗" + status + error);
+        },
+      });
+    });
+  });
+</script>

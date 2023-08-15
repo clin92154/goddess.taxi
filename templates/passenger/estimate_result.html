@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <title>我要預估</title>
+  </head>
+
+  <body>
+    <main>
+      <div class="pick-up">
+        <label for="pick-up">上車</label>
+        <input id="pick-up" class="check" name="pick-up" value="{{pickup}}"
+        type="text" disabled="disabled" value= />
+      </div>
+      <div class="drop-off">
+        <label for="drop-off">下車</label>
+        <input
+          id="drop-off"
+          class="check"
+          value="{{dropoff}}"
+          name="drop-off"
+          type="text"
+          disabled="disabled"
+        />
+      </div>
+      <div id="map" class="map"></div>
+      <div class="order_inform">
+        <div class="row">
+          <label>預估行程:</label>
+          <input type="text" id="estimated-distance" value="" disabled />
+        </div>
+        <div class="row">
+          <label>預估結果:</label>
+          <input type="text" id="estimated-fare" disabled />
+        </div>
+      </div>
+      <button id="refresh-btn" class="previous">重新預估</button>
+    </main>
+  </body>
+  <script>
+    // 在頁面載入完成後執行相關程式碼
+    window.addEventListener("DOMContentLoaded", function () {
+      // 取得重新整理按鈕元素
+      var refreshBtn = document.getElementById("refresh-btn");
+
+      // 為重新整理按鈕註冊點擊事件處理程序
+      refreshBtn.addEventListener("click", function () {
+        location = "./estimateRequest"; // 重新載入網頁
+      });
+    });
+  </script>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  {% load static %}
+  <script src="{% static 'js/map_preview.js' %}"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW&callback=initMap"></script>
+</html>

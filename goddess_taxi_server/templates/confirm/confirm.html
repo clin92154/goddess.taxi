@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <title>司機驗證頁面</title>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        {% csrf_token %}
+        <div class="col-12 align-items-center justify-content-center">
+          <form
+            id="confrim"
+            method="POST"
+            class="shadow-lg p-3 mb-5 bg-body rounded-3"
+          >
+            <div class="mb-3">
+              <input
+                type="hidden"
+                id="user_id"
+                name="user_id"
+                value=""
+                required
+              />
+              <!--取得用戶id-->
+              <input
+                type="hidden"
+                id="displayName"
+                name="displayName"
+                value=""
+                required
+              />
+              <!--取得用戶名稱-->
+              <label for="phone" class="form-label" required>手機號碼：</label>
+              <input
+                type="tel"
+                class="form-control"
+                id="phone"
+                aria-describedby="telHelp"
+                name="phone"
+                maxlength="10"
+                placeholder="【輸入範例：0901234567】"
+              />
+              <div id="telHelp" class="form-text">
+                請輸入於車隊登記的手機號碼
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="pwd" class="form-label">密碼：</label>
+              <input
+                type="password"
+                class="form-control"
+                id="pwd"
+                name="pwd"
+                required
+              />
+            </div>
+
+            <button
+              id="submit"
+              type="submit"
+              class="btn btn-primary justify-content-center"
+            >
+              驗證
+            </button>
+            <div id="status"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!-- Boostrap -->
+<script
+  src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+  integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.min.js"
+  integrity="sha384-Rx+T1VzGupg4BHQYs2gCW9It+akI2MM/mndMCy36UVfodzcJcF0GGLxZIzObiEfa"
+  crossorigin="anonymous"
+></script>
+
+<!-- LINE LIFF API -->
+<script
+  charset="utf-8"
+  src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<script>
+  //liff初始化
+  let liff_id = "2000375045-Z478EObV";
+  liff
+    .init({
+      liffId: liff_id,
+    })
+    .then(async () => {
+      if (liff.isLoggedIn()) {
+        /*判斷是否為好友，參見https://developers.line.biz/en/reference/liff/#get-friendship*/
+        liff.getFriendship().then((data) => {
+          if (!data.friendFlag) {
+            alert("此為司機登入頁面，需與LINE官方帳號成為好友才可使用");
+            liff.closeWindow();
+          }
+        });
+        //取得用戶資料，參見https://developers.line.biz/en/reference/liff/#get-decoded-id-token
+        let user = liff.getDecodedIDToken();
+        let lineId = document.getElementById("user_id");
+        let name = document.getElementById("displayName");
+        liff
+          .getProfile()
+          .then(function (profile) {
+            lineId.value = profile.userId; //用戶LINE名稱
+            name.value = profile.displayName; //用戶LINE名稱
+          })
+          .catch(function (error) {});
+      } else {
+        liff.login();
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+</script>
+<script>
+  //演算法
+  //1. 取得事件
+  $(document).ready(function () {
+    $.ajaxSetup({
+      data: { csrfmiddlewaretoken: "{{ csrf_token }}" },
+    });
+    $("#confrim").on("submit", function (e) {
+      e.preventDefault();
+      $.ajax({
+        url: "{% url 'signin' %}",
+        method: "POST",
+        data: $("form").serialize(), // 將表單資料用打包起來送出去
+        dataType: "json", //資料格式\
+
+        beforeSend: function () {
+          $("#submit").prop("disabled", true);
+          $("#status").html(
+            '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div role="status"><div>驗證中... 請稍後</div>'
+          );
+        },
+        success: function (res) {
+          let status = res.status;
+          if (status) {
+            if (status == "not exist") {
+              $("#status").html("目前這支號碼尚無登記至任一車隊，請重新確認。");
+              setTimeout(() => $("#status").html(), 3000);
+              $("#submit").prop("disabled", false);
+              document.getElementById("confrim").reset();
+            } else {
+              $("#status").html("驗證成功，3秒後將自動關閉頁面。");
+              liff.sendMessages([
+                {
+                  type: "text",
+                  text: "上線接單",
+                },
+              ]);
+              setTimeout(() => liff.closeWindow(), 3000);
+            }
+          } else {
+            $("#status").html(
+              "驗證失敗！\n請檢查手機號碼及密碼是否輸入正確\n並重新輸入..."
+            );
+            setTimeout(() => $("#status").html(), 3000);
+            $("#submit").prop("disabled", false);
+            document.getElementById("confrim").reset();
+          }
+        },
+        error: function (error) {
+          alert(error);
+        },
+      });
+    });
+  });
+</script>
