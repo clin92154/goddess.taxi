@@ -660,7 +660,7 @@ def waitOrder(order):
             "action": {
               "type": "uri",
               "label": "繼續找尋",
-              "uri": "https://liff.line.me/1660989772-YZW8X4yO"
+              "uri": "https://liff.line.me/2000375045-m4D2Wp53"
             }
           }
         ]

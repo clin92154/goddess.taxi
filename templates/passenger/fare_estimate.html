@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <title>我要預估</title>
+  </head>
+
+  <body>
+    <main>
+      <form method="POST" id="orderlist" class="order">
+        <div class="pick-up">
+          <label for="pick-up">請填寫上車地點</label>
+          <input
+            id="pick-up"
+            name="pick-up"
+            type="text"
+            placeholder="請輸入上車地址"
+            required
+          />
+        </div>
+        <div class="drop-off">
+          <label for="drop-off">請填寫下車地點</label>
+          <input
+            id="drop-off"
+            name="drop-off"
+            type="text"
+            placeholder="請輸入下車地址"
+            value=""
+            required
+          />
+        </div>
+        <button type="submit" class="next">預估</button>
+      </form>
+    </main>
+  </body>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  {% load static %}
+  <script src="{% static 'js/autocomplete.js' %}">
+    let PickupGPSlatLng , arrivinglat, arrivingLng, departinglat, departingLng;
+  </script>
+</html>

@@ -96,9 +96,7 @@
     integrity="sha384-skAcpIdS7UcVUC05LJ9Dxay8AXcDYfBJqt1CJ85S/CFujBsIzCIv+l9liuYLaMQ/"
     crossorigin="anonymous"
   ></script>
-  {% comment %}
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW"></script>
-  {% endcomment %}
+
 
   <script
     charset="utf-8"
@@ -119,6 +117,7 @@
     let final_time;
     let final_fare;
     let final_distance;
+    let start_at;
 
     //window.clearInterval(timeoutID);
     $(document).ready(function () {
@@ -194,5 +193,5 @@
   </script>
   <script src="{% static 'js/navigator.js' %}"></script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC_s5-fCc69D64n3iA4PznfVhF3Sn_5YVA&libraries=drawing,geometry,places&language=zh-TW&callback=initMap"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY&libraries=drawing,geometry,places&language=zh-TW&callback=initMap"></script>
 </html>

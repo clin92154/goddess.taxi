@@ -2,6 +2,7 @@ import json
 # from .models import *
 from urllib.parse import quote
 from goddess_taxi_server.models import *
+from linebot.models import *
 
 
 

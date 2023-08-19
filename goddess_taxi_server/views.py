@@ -20,8 +20,8 @@ import math
 
 # LINEbot Moudle
 from linebot import LineBotApi, WebhookParser
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import * 
+from linebot.exceptions import *
+from linebot.models import *
 #對話樣板
 from ChatTemplate.DriverServer import * 
 from ChatTemplate.passengerServer import * 
@@ -529,20 +529,22 @@ def go_departing(request):
         driver = Driver.objects.get(d_line_id=request.POST['uid'])
         print(request.POST['status'] , driver.current_rsv )
         if request.POST['status'] == 'init':
+
             rsv = RideRSV.objects.get(req_id=driver.current_rsv)
             departing_location = tuple(map(float,(json.loads(rsv.departing)['lati_NS'], json.loads(rsv.departing)['longi_EW']))) # New York, N
             print(departing_location)
+            print(json.loads(rsv.departing)['name'])
             return JsonResponse({'status':'go_departing','location_name':json.loads(rsv.departing)['name'],'arriving_location':{'lat': departing_location[0], 'lng':departing_location[1]}})
         elif request.POST['status'] == 'go_departing':
             if driver.current_rsv != None:
-                message = [ComfirmOrder(driver.current_rsv)]
+                rsv = RideRSV.objects.get(req_id=driver.current_rsv)
+                message = [ComfirmOrder(str(rsv)),StartCalcular(rsv)]
+                passenger = Passengers.objects.get(p_line_id=rsv.p_line_id).use_server
+                NotifyArrived(rsv,driver,passenger) #通知乘客
             else:
                 message = TextSendMessage(text=f"目前訂單已被取消或成立，請重新確認")
             d_bot_api.push_message(driver.d_line_id,  message)
-            rsv = RideRSV.objects.get(req_id=driver.current_rsv)
-            passenger = Passengers.objects.get(p_line_id=rsv.p_line_id).use_server
-            p_bot_api = LineBotApi(settings.LINE_CHANNEL_DATA[passenger]['ACCESS_TOKEN'])
-            p_bot_api.push_message(rsv.p_line_id,TextSendMessage(f"訂單【{driver.current_rsv}】司機已經抵達，請確認(若5分鐘未上車，將會開始跳表等候)"))
+
             return JsonResponse({'status':'end_departing'})
     return render(request, 'driver_tools/navigate2start.html')
 
@@ -636,7 +638,6 @@ def callback(request):
                     elif "[get]" in event.postback.data :
                         message = TextSendMessage(text=f"訂單不成立，請重新接單") #Default
                         req_id = event.postback.data.split("[get]")
-                        print(req_id)
                         req_id = RideRequest.objects.get(req_id=req_id[1])
                         driver = Driver.objects.get(d_line_id=uid)
                         if driver.current_rsv != None: #目前訂單尚未完成
@@ -656,11 +657,15 @@ def callback(request):
                                     driver_current = tuple(map(float,(json.loads(driver.current_location)['lati_NS'], json.loads(driver.current_location)['longi_EW']))) # New York, NY
                                     origin = tuple(map(float,(json.loads(req_rsv.departing)['lati_NS'], json.loads(req_rsv.departing)['longi_EW']))) # New York, NY
                                     gurl = f"https://maps.googleapis.com/maps/api/directions/json?origin={driver_current[0]}%2C{driver_current[1]}&destination={origin[0]}%2C{origin[1]}&key={gmaps_key}"
+                                    print(gurl)
                                     # 取得路線資料
                                     directions_result = json.loads(requests.request("GET", gurl).text)
-                                   
+                                    print("directions_result",directions_result)
                                     duration = int(directions_result['routes'][0]["legs"][0]['duration']['value']//60)
                                     distance = directions_result['routes'][0]["legs"][0]['distance']['value']/1000
+                                    print("duration & distance",duration,distance)
+                                    print(driver.current_group)
+                                    print(DriverGroup.objects.get(driver_group=driver.current_group))
                                     rsv = RideRSV.objects.create(req_id = req_rsv ,d_line_id=uid,driver_group=DriverGroup.objects.get(driver_group=driver.current_group), p_line_id=req_rsv.p_line_id , departing=req_rsv.departing, arriving=req_rsv.arriving , travel_distance=distance , travel_time=duration , travel_fare=0 )
 
                                     passenger = Passengers.objects.get(p_line_id=rsv.p_line_id).use_server
@@ -672,7 +677,14 @@ def callback(request):
                                     driver.save()
                                     #ComfirmOrder(str(req_id))
                             except Exception as error:
-                                message = TextSendMessage(text=f"{error}")
+                                print(1,error)
+                            except BaseError as error:
+                                print(2,error)
+                            except LineBotApiError as error:
+                                print(3,error)
+                            except InvalidSignatureError as error:
+                                print(4,error)
+
                         else:
                             message = TextSendMessage(text=f"訂單不成立，請重新接單")
                 d_bot_api.reply_message(event.reply_token, message)  # time.sleep(10)            except:

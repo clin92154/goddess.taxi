@@ -104,6 +104,7 @@ function initMap() {
     },
   });
   //0726更新，如果訂單資料庫中行程出發時間(start_at)存在，則將怠速開始時間設為start_at,否則設為現在時間
+  getPosition();
   if (start_at) {
     //0726更新,JS中有使用到時間的格式均為Unix Timestamp，因此需要將start_at轉換為Unix Timestamp
     //0726更新,時間格式參考,start_at = "2023-07-31 12:34:56";
@@ -111,7 +112,6 @@ function initMap() {
   } else {
     startIdletime = Date.now();
   }
-  getPosition();
 }
 
 function addMarker(location, label) {
