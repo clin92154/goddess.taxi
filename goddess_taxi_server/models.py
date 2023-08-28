@@ -70,7 +70,7 @@ class Driver(models.Model):
     driver_hp = models.CharField(max_length=10, null=True, blank=True)  # 手機號碼
     password = models.CharField(max_length=255, null=True, blank=True)  #密碼
     car_no = models.CharField(max_length=20, null=True, blank=True)  # 車牌
-    car_desc = models.CharField(max_length=20, null=True, blank=True)  # 車樣
+    car_desc = models.CharField(max_length=30, null=True, blank=True)  # 車樣
     is_online = models.BooleanField()  # 上線狀態
     current_location = JSONField(null=True, blank=True)  # 目前位置
     last_online = models.DateTimeField(null=True, blank=True)  # 最後上線時間
@@ -85,7 +85,6 @@ class Driver(models.Model):
         return str(self.driver_group)
     
     def save(self, *args, **kwargs):
-        self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
 
