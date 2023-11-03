@@ -28,12 +28,12 @@ GMAPS_KEY = 'AIzaSyBpLruvn_7H-6Q9gYl8LNGhVTm4kR5_2HY'#LINE Channel資料
 #判斷乘客司機
 LINE_CHANNEL_DATA = {
     'DriverServer':{
-        'ACCESS_TOKEN':"szpnvewOfvOFrbgMFOnHU1TX1EjMywAX6NufOLrELgVW0WmZe1lQNc0WX8i1zYIpjzjtDYNBHTHJdDL97cLZ6+c7wGKLSsCrxqG1rVCCukeDiOVmOCck1gXL2WmKBLXzR3/lzWpIqpUJ0iroxZY3TgdB04t89/1O/w1cDnyilFU=",
-        'SECRET':'aca858c32c1a29202b200e3db0685c98'
+        'ACCESS_TOKEN':",
+        'SECRET':''
     },
       'Develope_passenger_server':{
-        'ACCESS_TOKEN':"CZfTc72jI6v7Cm4PCkALF6GhlDOUhtMKYRi/IGtuh36zkcx+8bvyTIIWOOY+TACfEHmvzVkBb0WAG1S/62HGJ3lAKpKjV5g0fd5szviHe/H2cZwyD8StZFydHBEe8DSWMr11IzaaX4sIlFV1UOj3DQdB04t89/1O/w1cDnyilFU=",
-        'SECRET':"7e4ef93671d3c6b100cbfa04be1224e8"
+        'ACCESS_TOKEN':"",
+        'SECRET':""
     }
 }
 
